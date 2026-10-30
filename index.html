@@ -639,6 +639,11 @@ img.fig{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;f
 .adv[open] summary{margin-bottom:8px;color:var(--ink)}
 .grp{margin:26px 4px 0;font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
 .grp + details.block{margin-top:8px}
+details.block > summary .ht{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;min-height:2.6em;justify-content:center}
+details.block > summary .ht h2{flex:none;line-height:1.2}
+details.block > summary .ht .st{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+details.adv.rnd{margin-top:8px}
+details.adv.rnd > summary{font-weight:600}
 .tiles.modes{margin-top:10px}
 .foot-links{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:16px 0 8px}
 .mascot-m{max-height:min(var(--mh,130px),13vh)}
@@ -841,12 +846,14 @@ function myDefaults(){ const P=presets(), d=P.list.find(x=>x.id===P.def); if(d&&
   try{ const o=JSON.parse(localStorage.getItem(DEF_KEY)); if(o&&o.rounds) return {...defaultConfig(),...o}; }catch(e){} return defaultConfig(); }
 function cfgSummary(c){ const r=(c.rounds||[]).filter(x=>x.enabled).map(x=>x.name).join(", "), nc=BANK.filter(b=>!b.ef&&!b.pack&&c.cats&&c.cats[b.key]).length;
   return `${c.turnSeconds} s · ${c.cardsTotal} ${tr("cartas")} · ${tr("Rondas")}: ${esc(r)} · ${nc} ${tr("categorías")} · ${tr("dificultad")} ${difName(c).toLowerCase()}`; }
-function presetNew(){ askText("Nombre de esta configuración (por ejemplo «Cena con amigos» o «Rápida»):","",v=>{ v=(v||"").trim(); if(!v) return; const P=presets(); const id="p"+Date.now(); P.list.push({id,name:v.slice(0,40),cfg:JSON.parse(JSON.stringify(S.config))}); if(!P.def) P.def=id; savePresets(P); render(); toast("Configuración guardada"); }); }
-function presetLoad(id){ const p=presets().list.find(x=>x.id===id); if(!p) return; const keep={}; ["sound","music","ambient","vibrate","voice","keepOn","autoFull","volAmb","volTurn","volFx","volVoice","lockRot","holdCard","holdReveal","dndCheck","seasonOn","seasonPick"].forEach(k=>keep[k]=S.config[k]); S.config={...defaultConfig(),...JSON.parse(JSON.stringify(p.cfg)),...keep}; save(); render(); toast(`Cargada: ${p.name}`); }
-function presetDef(id){ const P=presets(); P.def=P.def===id?null:id; savePresets(P); render(); toast(P.def?"Será la configuración de cada partida nueva":"Sin configuración predeterminada"); }
-function presetOver(id){ const P=presets(), p=P.list.find(x=>x.id===id); if(!p) return; if(!ASKED){ ask(`¿Guardar la configuración actual en «${p.name}»? Se sustituye la que tenía.`,()=>presetOver(id),"Guardar"); return; } p.cfg=JSON.parse(JSON.stringify(S.config)); savePresets(P); render(); toast("Configuración actualizada"); }
-function presetRen(id){ const P=presets(), p=P.list.find(x=>x.id===id); if(!p) return; askText("Nuevo nombre:",p.name,v=>{ v=(v||"").trim(); if(!v) return; p.name=v.slice(0,40); savePresets(P); render(); }); }
-function presetDel(id){ const P=presets(), p=P.list.find(x=>x.id===id); if(!p) return; if(!ASKED){ ask(`¿Borrar la configuración «${p.name}»?`,()=>presetDel(id),"Borrar"); return; } P.list=P.list.filter(x=>x.id!==id); if(P.def===id) P.def=null; savePresets(P); render(); toast("Configuración borrada"); }
+function presetNew(){ askText("Nombre de esta configuración (por ejemplo «Cena con amigos» o «Rápida»):","",v=>{ v=(v||"").trim(); if(!v) return; const P=presets(); const id="p"+Date.now(); P.list.push({id,name:v.slice(0,40),cfg:JSON.parse(JSON.stringify(S.config))}); if(!P.def) P.def=id; savePresets(P); presetsRefresh(); toast("Configuración guardada"); }); }
+function presetLoad(id){ const p=presets().list.find(x=>x.id===id); if(!p) return; const keep={}; ["sound","music","ambient","vibrate","voice","keepOn","autoFull","volAmb","volTurn","volFx","volVoice","lockRot","holdCard","holdReveal","dndCheck","seasonOn","seasonPick"].forEach(k=>keep[k]=S.config[k]); S.config={...defaultConfig(),...JSON.parse(JSON.stringify(p.cfg)),...keep}; save(); presetsRefresh(); toast(`Cargada: ${p.name}`); }
+function presetDef(id){ const P=presets(); P.def=P.def===id?null:id; savePresets(P); presetsRefresh(); toast(P.def?"Será la configuración de cada partida nueva":"Sin configuración predeterminada"); }
+function presetOver(id){ const P=presets(), p=P.list.find(x=>x.id===id); if(!p) return; if(!ASKED){ ask(`¿Guardar la configuración actual en «${p.name}»? Se sustituye la que tenía.`,()=>presetOver(id),"Guardar"); return; } p.cfg=JSON.parse(JSON.stringify(S.config)); savePresets(P); presetsRefresh(); toast("Configuración actualizada"); }
+function presetRen(id){ const P=presets(), p=P.list.find(x=>x.id===id); if(!p) return; askText("Nuevo nombre:",p.name,v=>{ v=(v||"").trim(); if(!v) return; p.name=v.slice(0,40); savePresets(P); presetsRefresh(); }); }
+function presetDel(id){ const P=presets(), p=P.list.find(x=>x.id===id); if(!p) return; if(!ASKED){ ask(`¿Borrar la configuración «${p.name}»?`,()=>presetDel(id),"Borrar"); return; } P.list=P.list.filter(x=>x.id!==id); if(P.def===id) P.def=null; savePresets(P); presetsRefresh(); toast("Configuración borrada"); }
+function showPresets(){ openModal(mHead("💾 Mis configuraciones")+presetsPanel()); }
+function presetsRefresh(){ render(); showPresets(); }
 function presetsPanel(){ const P=presets();
   return `<p class="sub" style="margin-bottom:10px">Guarda tus configuraciones (normas, cartas, rondas…) para usarlas otro día. La que tenga la ⭐ se usa en cada partida nueva. Se guardan en este dispositivo.</p>
   ${P.list.length?`<div class="plist">${P.list.map(p=>`<div class="pitem ${P.def===p.id?"def":""}"><div class="pih"><button class="star" aria-label="Predeterminada" onclick="presetDef('${p.id}')">${P.def===p.id?"⭐":"☆"}</button><b>${esc(p.name)}</b></div>
@@ -906,6 +913,10 @@ CA_DICT["🔊 Sonido"]="🔊 So";
 CA_DICT["📱 Pantalla"]="📱 Pantalla";
 CA_DICT["Sonido"]="So";
 CA_DICT["Pantalla"]="Pantalla";
+CA_DICT["no se juega"]="no es juga";
+CA_DICT["con vetos"]="amb vetos";
+CA_DICT["Reparto y vetos"]="Repartiment i vetos";
+CA_DICT["Rondas"]="Rondes";
 function trCA(t){ const k=String(t).trim(); if(!k) return t; let r=CA_DICT[k];
   if(r===undefined){ for(const [re,o] of CA_PAT){ const m=k.match(re); if(m){ r=o.replace(/\$(\d+)/g,(_,i)=>m[+i]===undefined?"":m[+i]); break; } } }
   return r===undefined?t:String(t).replace(k,r); }
@@ -1164,7 +1175,7 @@ function screenPanel(){
     ${sndRow("keepOn","","💡","Pantalla siempre encendida",`Evita que se apague o se bloquee mientras jugáis. Ahora: ${awakeStatus()}`)}
     ${sndRow("autoFull","","⛶","Pantalla completa al empezar","Así es más difícil salir sin querer (en iPhone no está disponible)")}
     ${sndRow("lockRot","","🔒","Bloquear el giro durante el turno","Si se gira el móvil sin querer, el tiempo se para hasta que lo dejes como estaba")}
-    ${sndRow("dndCheck","","🔕","Recordar «No molestar» o modo avión antes de empezar","Antes del primer turno se muestra un aviso para evitar llamadas y notificaciones. Es solo un recordatorio: no hay que confirmar nada")}
+    ${sndRow("dndCheck","","🔕","Recordar «No molestar» o modo avión antes de empezar","Antes del primer turno se muestra un aviso para evitar llamadas y notificaciones. No sale si el móvil no tiene conexión (por ejemplo, en modo avión)")}
     ${sndRow("seasonOn","","🎨","Ambientar según el día","Cambia colores, decoración y música en fechas especiales. <span id=\"seasonSt\">"+seasonStatus()+"</span>")}
     ${seasonPicker()}
   </div><p class="hint" style="margin-top:10px">🔕 ${tr("Una web no puede bloquear las notificaciones ni las llamadas por sí sola: por eso el juego os lo recuerda y espera vuestra confirmación.")}</p>`;
@@ -1818,7 +1829,7 @@ function topbar(){
     ${inGame?`<span class="tb-round">${S.phase==="end"?"Final":`Ronda ${S.roundIdx+1}<small>/${S.rounds.length}</small>`}</span>
       <span class="tb-score">${S.teams.map((t,i)=>`<span class="tbs ${i===S.teamTurn&&S.phase!=="end"?"cur":""}">${tEmoji(i)} <b>${tot[i]}</b></span>`).join("")}</span>`
       :`<span class="brand"><span class="tbm">${MASCOT}</span> Time’s Up!</span>`}
-    ${S.phase==="setup"?`<span class="tb-actions"><button class="btn small ghost menu-btn" onclick="showSound()" aria-label="Sonido">🔊</button><button class="btn small ghost menu-btn" onclick="showScreen()" aria-label="Pantalla">📱</button></span>`:`<button class="btn small ghost menu-btn" onclick="showMenu()" aria-label="Abrir menú">☰</button>`}</nav>`;
+    ${S.phase==="setup"?`<span class="tb-actions">${S.locked?"":`<button class="btn small ghost menu-btn" onclick="showPresets()" aria-label="Mis configuraciones">💾</button>`}<button class="btn small ghost menu-btn" onclick="showSound()" aria-label="Sonido">🔊</button><button class="btn small ghost menu-btn" onclick="showScreen()" aria-label="Pantalla">📱</button></span>`:`<button class="btn small ghost menu-btn" onclick="showMenu()" aria-label="Abrir menú">☰</button>`}</nav>`;
 }
 function scoreTable(hl){
   const tot=totals(), rs=S.rounds;
@@ -1828,7 +1839,7 @@ function scoreTable(hl){
 }
 function miniScore(){ const tot=totals(); return `<div class="mini-score">${S.teams.map((t,i)=>`<div>${tName(i)} <b>${tot[i]}</b></div>`).join("")}</div>`; }
 function sec(k,title,status,body){
-  return `<details class="block" id="sec-${k}" ${S.open===k?"open":""}><summary onclick="event.preventDefault();openSec('${k}')"><h2>${title}</h2><span class="st">${status}</span></summary><div class="bbody">${body}</div></details>`;
+  return `<details class="block" id="sec-${k}" ${S.open===k?"open":""}><summary onclick="event.preventDefault();openSec('${k}')"><span class="ht"><h2>${title}</h2><span class="st">${status}</span></span></summary><div class="bbody">${body}</div></details>`;
 }
 function turnOrder(){
   const T=S.teams.length; if(!T||S.teams.some(t=>!t.players.length)) return [];
@@ -2137,41 +2148,7 @@ function vSetup(){
     <label class="field" style="margin-top:12px">✍️ Vuestras cartas fijas <small>Una por línea. Entran siempre en el mazo.</small>
       <textarea oninput="setCfg('custom',this.value)" placeholder="El profe de mates&#10;La abuela de Pau">${esc(c.custom)}</textarea></label></details>`;
 
-  const rules=`
-    <div class="row" style="justify-content:space-between;margin-bottom:12px">${isOriginal()?`<span class="badge">Normas originales del Time’s Up</span>`:`<span class="badge mod">Normas modificadas</span>`}
-      <button class="btn small ghost" onclick="restoreOriginal()" ${isOriginal()?"disabled":""}>Volver a las originales</button></div>
-    <div class="opts">
-      ${vStep("turnSeconds","⏱️","Tiempo por turno","","s")}
-      ${vStep("pointsPerCard","⭐","Puntos por carta","")}
-      ${vToggle("carryOver","⏩","El tiempo que sobra pasa a la siguiente ronda","Si se acaban las cartas a mitad de turno.")}
-      ${vToggle("countdown","3️⃣","Cuenta atrás 3, 2, 1","Antes de cada turno")}
-      ${vToggle("holdCard","👆","Carta oculta: mantener el dedo para verla","Para dejar el móvil en la mesa: el tiempo se ve en grande y solo quien describe ve la carta mientras la pulsa")}
-      ${c.holdCard?`<div class="srow" style="padding:6px 4px"><span>👀 ${tr("Cada carta nueva se ve sola durante")}</span><div class="row">${[0,1,2,3,4,5].map(v=>`<button class="mchip ${(c.holdReveal??2)===v?"on":""}" onclick="setCfgR('holdReveal',${v})">${v} s</button>`).join("")}</div></div>`:""}
-    </div>
-    <h3 class="mini-h">Rondas</h3>
-    <div class="rounds">${c.rounds.map((r,i)=>`
-      <div class="round ${r.enabled?"":"off"}">
-        <div class="rh"><span class="num">${i+1}</span><input type="text" aria-label="Nombre de la ronda" value="${esc(r.name)}" oninput="setRound(${i},'name',this.value)" style="font-weight:700">
-          <button class="icon-btn" aria-label="Subir ronda" onclick="moveRound(${i},-1)">↑</button><button class="icon-btn" aria-label="Eliminar ronda" onclick="delRound(${i})">✕</button></div>
-        <textarea aria-label="Norma de la ronda" placeholder="Escribe aquí la norma si algún día queréis una ronda más" oninput="setRound(${i},'desc',this.value)">${esc(r.desc)}</textarea>
-        <div class="chips">
-          <button class="mchip ${r.enabled?"on":""}" onclick="setRound(${i},'enabled',${!r.enabled})">${r.enabled?"✅":"⬜"} Se juega</button>
-          <button class="mchip ${r.allowPass?"on":""}" onclick="setRound(${i},'allowPass',${!r.allowPass})">${r.allowPass?"✅":"⬜"} Se puede pasar</button>
-          <button class="mchip ${r.foulEnds?"on":""}" onclick="setRound(${i},'foulEnds',${!r.foulEnds})">${r.foulEnds?"✅":"⬜"} Una falta acaba el turno</button>
-          <button class="mchip ${r.shuffleTurn!==false?"on":""}" onclick="setRoundShuf(${i},${r.shuffleTurn===false})">${r.shuffleTurn!==false?"✅":"⬜"} Barajar las cartas al empezar cada turno</button>
-        </div>
-      </div>`).join("")}</div>
-    <button class="btn small" style="margin-top:10px" onclick="addRound()">Añadir ronda</button>
-    <details class="adv"><summary>⚙️ ${tr("Ayudas durante la partida")}</summary>
-    <div class="opts">
-      ${vToggle("guided","💡","Modo guiado","Explicaciones paso a paso para quien no conoce el juego.")}
-      ${vToggle("reviewBetween","👀","Repaso de cartas entre rondas","No es del original: antes de cada ronda se ven todas las cartas unos segundos.")}
-      ${c.reviewBetween?vStep("reviewSecs","⏲️","Tiempo de repaso","","s"):""}
-    </div>
-    </details>`;
-
   const deal=`
-    <p class="sub">Cómo se reparten las cartas y qué categorías se pueden quitar antes de empezar.</p>
     <h3 class="mini-h" style="margin-top:6px">Reparto</h3>
     ${vTiles("deckMode",[{v:"original",i:"🎴",l:"Como el original",d:"Cada uno ve sus cartas, vota el color y descarta."},{v:"random",i:"🎲",l:"Totalmente al azar",d:"Nadie ve las cartas. Se mezclan las dos caras."}])}
     ${c.deckMode==="original"?`
@@ -2193,9 +2170,44 @@ function vSetup(){
       ${S.locked?"":vToggle("adultVetoable","🔥","Se puede quitar el +18","Si lo desactivas, el +18 no se puede vetar.")}
     </div>`:""}`;
 
+  const rules=`
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">${isOriginal()?`<span class="badge">Normas originales del Time’s Up</span>`:`<span class="badge mod">Normas modificadas</span>`}
+      <button class="btn small ghost" onclick="restoreOriginal()" ${isOriginal()?"disabled":""}>Volver a las originales</button></div>
+    <div class="opts">
+      ${vStep("turnSeconds","⏱️","Tiempo por turno","","s")}
+      ${vStep("pointsPerCard","⭐","Puntos por carta","")}
+      ${vToggle("carryOver","⏩","El tiempo que sobra pasa a la siguiente ronda","Si se acaban las cartas a mitad de turno.")}
+      ${vToggle("countdown","3️⃣","Cuenta atrás 3, 2, 1","Antes de cada turno")}
+      ${vToggle("holdCard","👆","Carta oculta: mantener el dedo para verla","Para dejar el móvil en la mesa: el tiempo se ve en grande y solo quien describe ve la carta mientras la pulsa")}
+      ${c.holdCard?`<div class="srow" style="padding:6px 4px"><span>👀 ${tr("Cada carta nueva se ve sola durante")}</span><div class="row">${[0,1,2,3,4,5].map(v=>`<button class="mchip ${(c.holdReveal??2)===v?"on":""}" onclick="setCfgR('holdReveal',${v})">${v} s</button>`).join("")}</div></div>`:""}
+    </div>
+    <details class="adv"><summary>🔁 ${tr("Rondas")} (${c.rounds.filter(r=>r.enabled).length}): ${esc(c.rounds.filter(r=>r.enabled).map(r=>r.name).join(" · "))}</summary>
+    <div class="rounds">${c.rounds.map((r,i)=>`
+      <details class="adv rnd"><summary><b>${i+1}</b> · ${esc(r.name)||"—"}${r.enabled?"":" · "+tr("no se juega")}</summary>
+      <div class="round ${r.enabled?"":"off"}">
+        <div class="rh"><span class="num">${i+1}</span><input type="text" aria-label="Nombre de la ronda" value="${esc(r.name)}" oninput="setRound(${i},'name',this.value)" style="font-weight:700">
+          <button class="icon-btn" aria-label="Subir ronda" onclick="moveRound(${i},-1)">↑</button><button class="icon-btn" aria-label="Eliminar ronda" onclick="delRound(${i})">✕</button></div>
+        <textarea aria-label="Norma de la ronda" placeholder="Escribe aquí la norma si algún día queréis una ronda más" oninput="setRound(${i},'desc',this.value)">${esc(r.desc)}</textarea>
+        <div class="chips">
+          <button class="mchip ${r.enabled?"on":""}" onclick="setRound(${i},'enabled',${!r.enabled})">${r.enabled?"✅":"⬜"} Se juega</button>
+          <button class="mchip ${r.allowPass?"on":""}" onclick="setRound(${i},'allowPass',${!r.allowPass})">${r.allowPass?"✅":"⬜"} Se puede pasar</button>
+          <button class="mchip ${r.foulEnds?"on":""}" onclick="setRound(${i},'foulEnds',${!r.foulEnds})">${r.foulEnds?"✅":"⬜"} Una falta acaba el turno</button>
+          <button class="mchip ${r.shuffleTurn!==false?"on":""}" onclick="setRoundShuf(${i},${r.shuffleTurn===false})">${r.shuffleTurn!==false?"✅":"⬜"} Barajar las cartas al empezar cada turno</button>
+        </div>
+      </div></details>`).join("")}</div>
+    <button class="btn small" style="margin-top:10px" onclick="addRound()">Añadir ronda</button>
+    </details>
+    <details class="adv"><summary>🎴 ${tr("Reparto y vetos")}${c.vetoOn?" · "+tr("con vetos"):""}</summary>${deal}</details>
+    <details class="adv"><summary>⚙️ ${tr("Ayudas durante la partida")}</summary>
+    <div class="opts">
+      ${vToggle("guided","💡","Modo guiado","Explicaciones paso a paso para quien no conoce el juego.")}
+      ${vToggle("reviewBetween","👀","Repaso de cartas entre rondas","No es del original: antes de cada ronda se ven todas las cartas unos segundos.")}
+      ${c.reviewBetween?vStep("reviewSecs","⏲️","Tiempo de repaso","","s"):""}
+    </div>
+    </details>`;
+
   const nR=c.rounds.filter(r=>r.enabled).length;
   const rulesStatus=`${c.turnSeconds} s · ${nR} ${nR===1?"ronda":"rondas"}${isOriginal()?"":" · modificadas"}`;
-  const dealStatus=(c.deckMode==="random"?"Al azar":"Como el original")+(c.vetoOn?" · con vetos":"");
 
   return topbar()+`<div class="wrap">
   <header class="hero"><div class="logo">${MASCOT}</div><h1>Time’s Up!</h1><p class="credit">Creado por Álex Cebrián Ponce</p><p class="ver"><span>Versión</span> ${APP_VERSION}</p><p>Configura la partida y jugad pasando el móvil, la tablet o el ordenador.</p><div class="hero-btns"><button class="btn small ghost" onclick="showRules()">📖 ¿Cómo se juega?</button>${S.locked?"":`<button class="btn small ghost" onclick="showRanking()">🏆 Ranking</button>`}</div></header>
@@ -2204,10 +2216,7 @@ function vSetup(){
   ${(()=>{ if(!(S.errors&&S.errors.length)) return ""; S.errors=validate(); return S.errors.length?`<div class="errors" id="errors" role="alert"><b>Falta arreglar esto:</b><ul>${S.errors.map(e=>`<li>${esc(e)}</li>`).join("")}</ul></div>`:""; })()}
   <p class="grp">Cómo se juega</p>
   ${S.locked&&!S.locked.open?vLockedSummary():`${packOn()?sec("cats",`${VB()[0].icon} Cartas de ${esc(VB()[0].label)}`,`${VB()[0].items.length} cartas vuestras`,`<p class="sub">Se juega solo con las cartas de vuestro grupo. La dificultad no se aplica aquí.</p><div class="row"><button class="btn small primary" onclick="showWords()">📋 Ver las cartas</button><button class="btn small ghost" onclick="setPack('')">↩️ Volver a las cartas normales</button></div>`):sec("cats","🃏 Cartas y categorías",`${ncat} de ${VB().length}, ${difName().toLowerCase()}`,cats)}
-  ${sec("rules","📜 Normas y rondas",rulesStatus,rules)}
-  ${sec("deal","🎴 Reparto y vetos",dealStatus,deal)}`}
-  ${S.locked?"":`
-  ${sec("mine","💾 Mis configuraciones",(()=>{ const P=presets(), d=P.list.find(x=>x.id===P.def); return P.list.length?`${P.list.length} ${tr("guardadas")}${d?` · ⭐ ${esc(d.name)}`:""}`:tr("Ninguna guardada"); })(),presetsPanel())}`}
+  ${sec("rules","📜 Normas y rondas",rulesStatus,rules)}`}
   ${S.locked?"":`<p class="grp">Otros modos</p>
   <div class="tiles modes">
     <button class="tile" onclick="teacherPanel()"><span class="ti">🎓</span><b>Partidas de clase</b><small>Para profes: cartas y normas fijas</small></button>
@@ -2280,7 +2289,7 @@ function vDiscard(){
 function ruleBox(r){ return `<details class="rulebox"><summary><span class="rb-ico">📜</span><span class="rb-t">${tr("Normas de la ronda")} · ${r.allowPass?tr("se puede pasar"):tr("no se puede pasar")}${r.foulEnds?` · ${tr("falta = fin del turno")}`:""}</span><span class="rb-more">${tr("Ver")}</span></summary><p>${esc(r.desc)}</p></details>`; }
 /* ===== Aviso «No molestar» antes del primer turno ===== */
 let dndOk=false;
-function dndGate(){ return S.config.dndCheck!==false&&!dndOk&&S.phase==="ready"&&S.roundIdx===0&&!S.history.length&&!S.turn; }
+function dndGate(){ return S.config.dndCheck!==false&&navigator.onLine!==false&&!dndOk&&S.phase==="ready"&&S.roundIdx===0&&!S.history.length&&!S.turn; }
 function dndPlatform(){
   const u=navigator.userAgent||"", pf=navigator.platform||"";
   if(/iPhone|iPad|iPod/i.test(u)||(pf==="MacIntel"&&navigator.maxTouchPoints>1)) return "ios";
