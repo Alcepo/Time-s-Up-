@@ -781,17 +781,19 @@ details.adv.rnd > summary{font-weight:600}
 
 /* ===== Modo amigos: barra superior fina (grupo · tipo de cartas · salir) ===== */
 .pkbar{display:flex;align-items:center;gap:6px;margin:6px 0 8px;padding:3px 4px;border-radius:999px;background:color-mix(in srgb,var(--accent) 13%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line))}
-.pkbar button{font:inherit;font-size:.8rem;font-weight:700;line-height:1;color:var(--ink);background:none;border:0;border-radius:999px;padding:0 10px;min-height:32px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.pkbar button{font:inherit;font-size:.78rem;font-weight:700;line-height:1;color:var(--ink);background:none;border:0;border-radius:999px;padding:0 8px;min-height:32px;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .pkbar .pk-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:left}
 .pkbar .pk-seg{display:flex;flex:none;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px;gap:2px}
-.pkbar .pk-seg button{min-height:26px;padding:0 9px}
+.pkbar .pk-seg button{min-height:26px;padding:0 7px}
 .pkbar .pk-seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
-.pkbar .pk-x{flex:none;padding:0 11px;color:var(--muted)}
+.pkbar .pk-x{flex:none;padding:0 9px;color:var(--muted)}
 .pkbar button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 @media (max-width:360px){ .pkbar button{font-size:.74rem;padding:0 7px} .pkbar .pk-seg button{padding:0 6px} }
 /* Portada con la foto del grupo en lugar de la mascota */
-.hero .logo.gp{width:auto;height:clamp(78px,13vh,118px);max-width:min(80vw,300px);padding:0;overflow:hidden;display:block;margin:0 auto 6px;border-radius:16px;border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow);cursor:zoom-in}
-.hero .logo.gp img{display:block;height:100%;width:auto;max-width:100%;object-fit:cover}
+.hero .logo.gp{width:auto;height:clamp(78px,13vh,118px);max-width:min(80vw,300px);padding:0;overflow:visible;display:block;margin:0 auto 6px;border-radius:0;border:0;background:none;box-shadow:none;cursor:zoom-in}
+.hero .logo.gp img{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;border-radius:0}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hero .logo.gp img{filter:drop-shadow(0 0 3px #fff7) drop-shadow(0 4px 8px #0006)}}
+:root[data-theme="dark"] .hero .logo.gp img{filter:drop-shadow(0 0 3px #fff7) drop-shadow(0 4px 8px #0006)}
 @media (max-height:600px){ .hero .logo.gp{height:64px} }
 </style>
 </head>
@@ -2260,7 +2262,7 @@ function vSetup(){
   ${(()=>{ if(!(S.errors&&S.errors.length)) return ""; S.errors=validate(); return S.errors.length?`<div class="errors" id="errors" role="alert"><b>Falta arreglar esto:</b><ul>${S.errors.map(e=>`<li>${esc(e)}</li>`).join("")}</ul></div>`:""; })()}
   ${S.locked&&!S.locked.open?vLockedSummary():`${packOn()?sec("cats",`${VB()[0].icon} Cartas de ${esc(VB()[0].label)}`,`${VB()[0].items.length} cartas vuestras`,`<p class="sub">Se juega solo con las cartas de vuestro grupo. La dificultad no se aplica aquí.</p><div class="row"><button class="btn small primary" onclick="showWords()">📋 Ver las cartas</button></div>`):sec("cats","🃏 Cartas y categorías",`${ncat} de ${VB().length}, ${difName().toLowerCase()}${isCardsOriginal()?"":" · modificadas"}`,cats)}
   ${sec("rules","📜 Normas y rondas",rulesStatus,rules)}`}
-  ${S.locked?"":`<div class="row modes-row"><button class="btn small ghost" onclick="teacherPanel()">🎓 Partidas de clase</button>${packOn()?`<button class="btn small ghost" onclick="setPack('')">↩️ ${tr("Volver al juego normal")}</button>`:`<button class="btn small ghost" onclick="friendsPanel()">👯 Con amigos</button>`}</div>`}
+  ${S.locked||packGroup()?"":`<div class="row modes-row"><button class="btn small ghost" onclick="teacherPanel()">🎓 Partidas de clase</button><button class="btn small ghost" onclick="friendsPanel()">👯 Con amigos</button></div>`}
     </div>
   <div class="bottombar"><button class="btn primary big" onclick="prepareDeck()">Repartir cartas</button></div>`;
 }
@@ -2553,7 +2555,7 @@ function winPlayersHtml(ids){ const rows=ids.map(i=>{ const pl=(S.teams[i].playe
 function winArtHtml(ids){ return `<div class="winart-in">${ids.map(i=>{ const s=ANIM_IMG[S.teams[i].animal]; return s?`<img class="win-img pop" alt="${esc(an(S.teams[i].animal))}" src="${s}" decoding="async">`:`<div class="bigemoji pop">${tEmoji(i)}</div>`; }).join("")}</div>`; }   /* data:image/... en base64 */
 const GROUP_CAPTION={ frikis:"🎮 Los Frikis, al completo", teixo:"🎲 TeixoGames, al completo" };
 function pkBar(){ const k=packGroup(); if(!k) return ""; const b=BANK.find(x=>x.key==="pk_"+k), own=S.config.packCards!=="normal", out=esc(tr("Volver al juego normal"));
-  return `<div class="pkbar" role="group" aria-label="${esc(tr("Modo con amigos"))}"><button class="pk-name" onclick="friendsPanel()" title="${esc(tr("Cambiar de grupo"))}" aria-label="${esc(tr("Cambiar de grupo"))}: ${esc(b.label)}">👯 ${esc(b.label)} ▾</button><div class="pk-seg"><button aria-pressed="${own}" onclick="setPack('${k}','own')">⭐ ${tr("Grupo")}</button><button aria-pressed="${!own}" onclick="setPack('${k}','normal')">🃏 ${tr("Normales")}</button></div><button class="pk-x" onclick="setPack('')" aria-label="${out}" title="${out}">✕ ${tr("Salir")}</button></div>`; }
+  return `<div class="pkbar" role="group" aria-label="${esc(tr("Modo con amigos"))}"><button class="pk-name" onclick="friendsPanel()" title="${esc(tr("Cambiar de grupo"))}" aria-label="${esc(tr("Cambiar de grupo"))}: ${esc(b.label)}">${esc(b.label)} ▾</button><div class="pk-seg"><button aria-pressed="${own}" onclick="setPack('${k}','own')">⭐ ${tr("Grupo")}</button><button aria-pressed="${!own}" onclick="setPack('${k}','normal')">🃏 ${tr("Normales")}</button></div><button class="pk-x" onclick="setPack('')" aria-label="${out}" title="${out}">✕ ${tr("Salir")}</button></div>`; }
 function heroLogo(){ const k=S.locked?"":groupPhotoKey();
   if(k) return `<div class="logo gp notr" onclick="zoomPhoto('${k}')" role="img" aria-label="${esc(GROUP_CAPTION[k]||"")}"><img src="${GROUP_PHOTOS[k]}" alt="" decoding="async"></div>`;
   return `<div class="logo">${MASCOT}</div>`; }
