@@ -642,6 +642,10 @@ img.fig{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;f
 details.block > summary .ht{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;min-height:2.6em;justify-content:center}
 details.block > summary .ht h2{flex:none;line-height:1.2}
 details.block > summary .ht .st{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.wrap{padding-bottom:calc(var(--bb,76px) + 12px)}
+.stage{padding-bottom:calc(var(--bb,76px) + 12px)}
+.packbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 14%,var(--surface));border:1px solid var(--line)}
+.packbar span{min-width:0}
 .modes-row{justify-content:center;margin-top:12px;gap:8px}
 details.adv.rnd{margin-top:8px}
 details.adv.rnd > summary{font-weight:600}
@@ -835,6 +839,11 @@ function isOriginal(){
   if(Object.keys(ORIGINAL).some(k=>c[k]!==ORIGINAL[k])) return false;
   return JSON.stringify(c.rounds)===JSON.stringify(originalRounds());
 }
+const RULE_KEYS=["turnSeconds","pointsPerCard","carryOver"], CARD_KEYS=["cardsTotal","deckMode","voteColor","voteWhen","discardRounds"];
+function isRulesOriginal(){ const c=S.config; return RULE_KEYS.every(k=>c[k]===ORIGINAL[k])&&JSON.stringify(c.rounds)===JSON.stringify(originalRounds()); }
+function isCardsOriginal(){ const c=S.config; return CARD_KEYS.every(k=>c[k]===ORIGINAL[k]); }
+function restoreRules(){ if(S.locked&&!S.locked.open) return locked(); RULE_KEYS.forEach(k=>S.config[k]=ORIGINAL[k]); S.config.rounds=originalRounds(); save(); render(); toast("Normas originales restauradas"); }
+function restoreCards(){ if(S.locked&&!S.locked.open) return locked(); CARD_KEYS.forEach(k=>S.config[k]=ORIGINAL[k]); save(); render(); toast("Cartas y reparto originales restaurados"); }
 function restoreOriginal(){ if(S.locked&&!S.locked.open) return locked(); Object.assign(S.config,ORIGINAL); S.config.rounds=originalRounds(); save(); render(); toast("Normas originales restauradas"); }
 
 /* ============ ESTADO ============ */
@@ -924,6 +933,10 @@ CA_DICT["Cartas propias"]="Cartes pròpies";
 CA_DICT["Ninguna"]="Cap";
 CA_DICT["Una lista"]="Una llista";
 CA_DICT["Cada uno en secreto"]="Cadascú en secret";
+CA_DICT["Mazo o reparto modificados"]="Mazo o repartiment modificats";
+CA_DICT["Volver a los originales"]="Tornar als originals";
+CA_DICT["Cartas y reparto originales restaurados"]="Cartes i repartiment originals restaurats";
+CA_DICT["Modo con amigos"]="Mode amb amics";
 function trCA(t){ const k=String(t).trim(); if(!k) return t; let r=CA_DICT[k];
   if(r===undefined){ for(const [re,o] of CA_PAT){ const m=k.match(re); if(m){ r=o.replace(/\$(\d+)/g,(_,i)=>m[+i]===undefined?"":m[+i]); break; } } }
   return r===undefined?t:String(t).replace(k,r); }
@@ -1201,6 +1214,8 @@ function rerenderSound(){ if($("modal")&&$("modal").innerHTML.includes("sndrow")
    Para evitarlo se reserva un hueco (min-height del body) mientras dura el cambio y
    se va recortando solo cuando el usuario vuelve a mover la pantalla. */
 let padTimer=0;
+function syncBB(){ const bb=document.querySelector("#app .bottombar"); document.documentElement.style.setProperty("--bb",(bb?bb.offsetHeight:0)+"px"); }
+window.addEventListener("resize",syncBB); window.addEventListener("orientationchange",()=>setTimeout(syncBB,200)); window.addEventListener("load",()=>setTimeout(syncBB,150));
 function trimPad(){
   const b=document.body; if(!b.style.minHeight) return;
   const A=$("app"); if(!A) return;
@@ -2164,6 +2179,7 @@ function vSetup(){
 
   const cats=`
     <p class="sub">${fmt(VB().reduce((a,b)=>a+b.items.length,0))} palabras en ${VB().length} categorías. Con lo marcado: <b>${fmt(availableWords())}</b> palabras.</p>
+    ${isCardsOriginal()?"":`<div class="row" style="justify-content:space-between;margin-bottom:12px"><span class="badge mod">Mazo o reparto modificados</span><button class="btn small ghost" onclick="restoreCards()">Volver a los originales</button></div>`}
     <div class="opts">
       ${vStep("cardsTotal","🃏","Cartas en el mazo","")}
     </div>
@@ -2189,8 +2205,8 @@ function vSetup(){
       ${m==="secret"?`<div class="opts" style="margin-top:8px">${vStep("perPlayer","🤫","Cartas secretas por jugador","Cada uno escribe las suyas sin que lo vean los demás.")}</div>${(c.custom||"").trim()?`<p class="hint">Siguen entrando vuestras cartas fijas de la lista.</p>`:""}`:""}`; })()}`;
 
   const rules=`
-    <div class="row" style="justify-content:space-between;margin-bottom:12px">${isOriginal()?`<span class="badge">Normas originales del Time’s Up</span>`:`<span class="badge mod">Normas modificadas</span>`}
-      <button class="btn small ghost" onclick="restoreOriginal()" ${isOriginal()?"disabled":""}>Volver a las originales</button></div>
+    <div class="row" style="justify-content:space-between;margin-bottom:12px">${isRulesOriginal()?`<span class="badge">Normas originales del Time’s Up</span>`:`<span class="badge mod">Normas modificadas</span>`}
+      <button class="btn small ghost" onclick="restoreRules()" ${isRulesOriginal()?"disabled":""}>Volver a las originales</button></div>
     <div class="opts">
       ${vStep("turnSeconds","⏱️","Tiempo por turno","","s")}
       ${vStep("pointsPerCard","⭐","Puntos por carta","")}
@@ -2221,13 +2237,14 @@ function vSetup(){
 `;
 
   const nR=c.rounds.filter(r=>r.enabled).length;
-  const rulesStatus=`${c.turnSeconds} s · ${nR} ${nR===1?"ronda":"rondas"}${isOriginal()?"":" · modificadas"}`;
+  const rulesStatus=`${c.turnSeconds} s · ${nR} ${nR===1?"ronda":"rondas"}${isRulesOriginal()?"":" · modificadas"}`;
 
   return topbar()+`<div class="wrap">
   <header class="hero"><div class="logo">${MASCOT}</div><h1>Time’s Up!</h1><p class="credit">Creado por Álex Cebrián Ponce</p><p class="ver"><span>Versión</span> ${APP_VERSION}</p><p>Configura la partida y jugad pasando el móvil, la tablet o el ordenador.</p><div class="hero-btns"><button class="btn small ghost" onclick="showRules()">📖 ¿Cómo se juega?</button>${S.locked?"":`<button class="btn small ghost" onclick="showRanking()">🏆 Ranking</button>`}</div></header>
+  ${packOn()&&!S.locked?`<div class="packbar"><span>👯 ${tr("Modo con amigos")}: <b>${esc(VB()[0].label)}</b></span><button class="btn small primary" onclick="setPack('')">↩️ ${tr("Volver al juego normal")}</button></div>`:""}
   ${sec("players","👥 Jugadores y equipos",`${np} jugadores${S.drawn?`, ${S.teams.length} equipos`:""}`,players)}
   ${(()=>{ if(!(S.errors&&S.errors.length)) return ""; S.errors=validate(); return S.errors.length?`<div class="errors" id="errors" role="alert"><b>Falta arreglar esto:</b><ul>${S.errors.map(e=>`<li>${esc(e)}</li>`).join("")}</ul></div>`:""; })()}
-  ${S.locked&&!S.locked.open?vLockedSummary():`${packOn()?sec("cats",`${VB()[0].icon} Cartas de ${esc(VB()[0].label)}`,`${VB()[0].items.length} cartas vuestras`,`<p class="sub">Se juega solo con las cartas de vuestro grupo. La dificultad no se aplica aquí.</p><div class="row"><button class="btn small primary" onclick="showWords()">📋 Ver las cartas</button><button class="btn small ghost" onclick="setPack('')">↩️ Volver a las cartas normales</button></div>`):sec("cats","🃏 Cartas y categorías",`${ncat} de ${VB().length}, ${difName().toLowerCase()}`,cats)}
+  ${S.locked&&!S.locked.open?vLockedSummary():`${packOn()?sec("cats",`${VB()[0].icon} Cartas de ${esc(VB()[0].label)}`,`${VB()[0].items.length} cartas vuestras`,`<p class="sub">Se juega solo con las cartas de vuestro grupo. La dificultad no se aplica aquí.</p><div class="row"><button class="btn small primary" onclick="showWords()">📋 Ver las cartas</button><button class="btn small ghost" onclick="setPack('')">↩️ Volver a las cartas normales</button></div>`):sec("cats","🃏 Cartas y categorías",`${ncat} de ${VB().length}, ${difName().toLowerCase()}${isCardsOriginal()?"":" · modificadas"}`,cats)}
   ${sec("rules","📜 Normas y rondas",rulesStatus,rules)}`}
   ${S.locked?"":`<div class="row modes-row"><button class="btn small ghost" onclick="teacherPanel()">🎓 Partidas de clase</button>${packOn()?`<button class="btn small ghost" onclick="setPack('')">↩️ ${tr("Volver al juego normal")}</button>`:`<button class="btn small ghost" onclick="friendsPanel()">👯 Con amigos</button>`}</div>`}
     </div>
@@ -2791,7 +2808,7 @@ function render(){
   const nAdv=same?A.querySelectorAll("details:not(.block)").length:0, ae=document.activeElement, aeId=same&&ae&&A.contains(ae)?ae.id:"";
   if(same&&y>0){ const b=document.body, cur=parseFloat(b.style.minHeight)||0; b.style.minHeight=Math.max(document.documentElement.scrollHeight,cur)+"px"; }   // evita que la página se acorte un instante y el navegador mueva el scroll
   fxToken++; stopConfetti();
-  A.innerHTML=v();
+  A.innerHTML=v(); syncBB();
   if(advOpen){ const ds=A.querySelectorAll("details:not(.block)"); if(ds.length===advOpen.length) ds.forEach((d,n)=>{ d.open=advOpen[n]; }); }
   if(same&&y>0){ try{ scrollTo({top:y,behavior:"instant"}); }catch(e){ scrollTo(0,y); } trimPadSoon(); }
   if(aeId){ const f=document.getElementById(aeId); if(f&&f!==document.activeElement&&f.focus) try{ f.focus({preventScroll:true}); }catch(e){} }
