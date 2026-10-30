@@ -642,6 +642,13 @@ img.fig{display:block;height:100%;width:auto;max-width:100%;object-fit:contain;f
 details.block > summary .ht{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;min-height:2.6em;justify-content:center}
 details.block > summary .ht h2{flex:none;line-height:1.2}
 details.block > summary .ht .st{text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+header.hero.hc{display:grid;grid-template-columns:52px 1fr;column-gap:12px;row-gap:2px;align-items:center;text-align:left;padding:2px 0 0}
+header.hero.hc .logo{grid-row:1/3;width:52px;height:52px;margin:0;font-size:1.6rem;border-radius:16px}
+header.hero.hc .hero-btns{grid-column:2;margin:0;justify-content:flex-start}
+header.hero.hc .meta{grid-column:2;display:flex;gap:8px;flex-wrap:wrap}
+header.hero.hc .meta p,header.hero.hc .meta .credit{display:block!important;margin:0;font-family:var(--body);font-weight:600;font-size:.74rem;color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.modes-row{justify-content:center;margin-top:12px;gap:8px}
 details.adv.rnd{margin-top:8px}
 details.adv.rnd > summary{font-weight:600}
 .tiles.modes{margin-top:10px}
@@ -917,6 +924,12 @@ CA_DICT["no se juega"]="no es juga";
 CA_DICT["con vetos"]="amb vetos";
 CA_DICT["Reparto y vetos"]="Repartiment i vetos";
 CA_DICT["Rondas"]="Rondes";
+CA_DICT["Mostrar categorías"]="Mostrar categories";
+CA_DICT["Ocultar categorías"]="Amagar categories";
+CA_DICT["Cartas propias"]="Cartes pròpies";
+CA_DICT["Ninguna"]="Cap";
+CA_DICT["Una lista"]="Una llista";
+CA_DICT["Cada uno en secreto"]="Cadascú en secret";
 function trCA(t){ const k=String(t).trim(); if(!k) return t; let r=CA_DICT[k];
   if(r===undefined){ for(const [re,o] of CA_PAT){ const m=k.match(re); if(m){ r=o.replace(/\$(\d+)/g,(_,i)=>m[+i]===undefined?"":m[+i]); break; } } }
   return r===undefined?t:String(t).replace(k,r); }
@@ -1829,7 +1842,7 @@ function topbar(){
     ${inGame?`<span class="tb-round">${S.phase==="end"?"Final":`Ronda ${S.roundIdx+1}<small>/${S.rounds.length}</small>`}</span>
       <span class="tb-score">${S.teams.map((t,i)=>`<span class="tbs ${i===S.teamTurn&&S.phase!=="end"?"cur":""}">${tEmoji(i)} <b>${tot[i]}</b></span>`).join("")}</span>`
       :`<span class="brand"><span class="tbm">${MASCOT}</span> Time’s Up!</span>`}
-    ${S.phase==="setup"?`<span class="tb-actions">${S.locked?"":`<button class="btn small ghost menu-btn" onclick="showPresets()" aria-label="Mis configuraciones">💾</button>`}<button class="btn small ghost menu-btn" onclick="showSound()" aria-label="Sonido">🔊</button><button class="btn small ghost menu-btn" onclick="showScreen()" aria-label="Pantalla">📱</button></span>`:`<button class="btn small ghost menu-btn" onclick="showMenu()" aria-label="Abrir menú">☰</button>`}</nav>`;
+    ${S.phase==="setup"?`<span class="tb-actions"><button class="btn small ghost menu-btn" onclick="showSound()" aria-label="Sonido">🔊</button><button class="btn small ghost menu-btn" onclick="showScreen()" aria-label="Pantalla">📱</button>${S.locked?"":`<button class="btn small ghost menu-btn" onclick="showPresets()" aria-label="Mis configuraciones">💾</button>`}</span>`:`<button class="btn small ghost menu-btn" onclick="showMenu()" aria-label="Abrir menú">☰</button>`}</nav>`;
 }
 function scoreTable(hl){
   const tot=totals(), rs=S.rounds;
@@ -1838,6 +1851,14 @@ function scoreTable(hl){
   </tbody></table></div>`;
 }
 function miniScore(){ const tot=totals(); return `<div class="mini-score">${S.teams.map((t,i)=>`<div>${tName(i)} <b>${tot[i]}</b></div>`).join("")}</div>`; }
+function ownMode(){ const c=S.config; return +c.perPlayer>0?"secret":(((c.custom||"").trim()||S.ownList)?"list":"none"); }
+function setOwn(m){ if(S.locked&&!S.locked.open) return locked(); const c=S.config;
+  if(m==="none"&&(c.custom||"").trim()){ ask("¿Quitar las cartas fijas que has escrito?",()=>{ c.custom=""; c.perPlayer=0; S.ownList=false; save(); render(); },"Quitar"); return; }
+  if(m==="none"){ c.perPlayer=0; S.ownList=false; }
+  else if(m==="list"){ c.perPlayer=0; S.ownList=true; }
+  else { if(+c.perPlayer<1) c.perPlayer=1; S.ownList=false; }
+  save(); render(); }
+function toggleCatsList(){ S.catsShow=!S.catsShow; render(); }
 function sec(k,title,status,body){
   return `<details class="block" id="sec-${k}" ${S.open===k?"open":""}><summary onclick="event.preventDefault();openSec('${k}')"><span class="ht"><h2>${title}</h2><span class="st">${status}</span></span></summary><div class="bbody">${body}</div></details>`;
 }
@@ -2134,19 +2155,21 @@ function vSetup(){
     <div class="row" style="margin-bottom:8px"><button class="btn small ghost" onclick="toggleDif('all')">Marcar todas</button><button class="btn small ghost" onclick="toggleDif('none')">Quitar todas</button></div>
     <div class="cats dif5">${["1","2","3","4","5"].map(k=>{ const on=difOn().has(k); return `<button class="cat ${on?"on":""}" aria-pressed="${on}" onclick="toggleDif('${k}')"><span class="ci">${DIF_ICON[k]}</span><span>${DIFS[k]}<small>${tr({1:"Para niños",2:"Muy conocidas",3:"Conocidas",4:"Poco conocidas",5:"Para expertos"}[k])}</small></span></button>`; }).join("")}</div>
     <p class="hint" style="margin-top:0">Toca un nivel para marcarlo o quitarlo. Si no hay ninguno marcado, se juega con todos.</p>
-    <h3 class="mini-h">Categorías</h3>
-    <div class="row" style="margin-bottom:10px"><button class="btn small primary" onclick="showWords()">📋 Ver las palabras de tu selección</button><button class="btn small ghost" onclick="allCats(true)">Marcar todas</button><button class="btn small ghost" onclick="allCats(false)">Quitar todas</button></div>
+    <h3 class="mini-h">Categorías <small style="font-weight:400;color:var(--muted)">· ${VB().filter(b=>c.cats[b.key]).length} de ${VB().length}</small></h3>
+    <div class="row" style="margin-bottom:10px"><button class="btn small primary" onclick="showWords()">📋 Ver las palabras de tu selección</button><button class="btn small" onclick="toggleCatsList()">${S.catsShow?"🙈 Ocultar categorías":"🏷️ Mostrar categorías"}</button></div>
+    ${S.catsShow?`<div class="row" style="margin-bottom:10px"><button class="btn small ghost" onclick="allCats(true)">Marcar todas</button><button class="btn small ghost" onclick="allCats(false)">Quitar todas</button></div>
     <p class="hint" style="margin-top:0">Toca una categoría para marcarla o quitarla. Si no hay ninguna marcada, se juega con todas.</p>
-    <div class="cats">${VB().map(b=>`<button class="cat ${c.cats[b.key]?"on":""} ${b.adult?"adult":""}" aria-pressed="${!!c.cats[b.key]}" onclick="toggleCat('${b.key}',${!c.cats[b.key]})"><span class="ci">${b.icon}</span><span>${b.adult?"🔥 ":""}${esc(L(b))}<small>${!difSet()?`${fmt(b.items.length)} palabras`:`${fmt(catCount(b))} de ${fmt(b.items.length)} palabras`}</small></span></button>`).join("")}</div>
-    <details class="adv"><summary>⚙️ ${tr("Opciones avanzadas de las cartas")}</summary>
-    <div class="opts">
+    <div class="cats">${VB().map(b=>`<button class="cat ${c.cats[b.key]?"on":""} ${b.adult?"adult":""}" aria-pressed="${!!c.cats[b.key]}" onclick="toggleCat('${b.key}',${!c.cats[b.key]})"><span class="ci">${b.icon}</span><span>${b.adult?"🔥 ":""}${esc(L(b))}<small>${!difSet()?`${fmt(b.items.length)} palabras`:`${fmt(catCount(b))} de ${fmt(b.items.length)} palabras`}</small></span></button>`).join("")}</div>`:""}
+    <div class="opts" style="margin-top:12px">
       ${vToggle("showCat","🏷️","Categoría dentro de la carta","Se ve en pequeño debajo de la palabra.")}
-      <h3 class="mini-h" style="margin-top:6px">Mezcla de categorías</h3>
-      ${vTiles("dealMode",[{v:"mix",i:"🌀",l:"Mezcla al azar"},{v:"equal",i:"⚖️",l:"Equilibrado por categorías",d:"El mismo número de cada una"}])}
-      ${vStep("perPlayer","🤫","Cartas secretas por jugador","Cada uno escribe las suyas sin que lo vean los demás.")}
     </div>
-    <label class="field" style="margin-top:12px">✍️ Vuestras cartas fijas <small>Una por línea. Entran siempre en el mazo.</small>
-      <textarea oninput="setCfg('custom',this.value)" placeholder="El profe de mates&#10;La abuela de Pau">${esc(c.custom)}</textarea></label></details>`;
+    <h3 class="mini-h">Mezcla de categorías</h3>
+    ${vTiles("dealMode",[{v:"mix",i:"🌀",l:"Mezcla al azar"},{v:"equal",i:"⚖️",l:"Equilibrado por categorías",d:"El mismo número de cada una"}])}
+    <h3 class="mini-h">Cartas propias</h3>
+    ${(()=>{ const m=ownMode(); return `<div class="chips">${[["none","Ninguna"],["list","✍️ Una lista"],["secret","🤫 Cada uno en secreto"]].map(([k,l])=>`<button class="mchip ${m===k?"on":""}" aria-pressed="${m===k}" onclick="setOwn('${k}')">${tr(l)}</button>`).join("")}</div>
+      ${m==="list"?`<label class="field" style="margin-top:8px"><small>Una por línea. Entran siempre en el mazo.</small>
+        <textarea oninput="setCfg('custom',this.value)" placeholder="El profe de mates&#10;La abuela de Pau">${esc(c.custom)}</textarea></label>`:""}
+      ${m==="secret"?`<div class="opts" style="margin-top:8px">${vStep("perPlayer","🤫","Cartas secretas por jugador","Cada uno escribe las suyas sin que lo vean los demás.")}</div>${(c.custom||"").trim()?`<p class="hint">Siguen entrando vuestras cartas fijas de la lista.</p>`:""}`:""}`; })()}`;
 
   const deal=`
     <h3 class="mini-h" style="margin-top:6px">Reparto</h3>
@@ -2180,6 +2203,9 @@ function vSetup(){
       ${vToggle("countdown","3️⃣","Cuenta atrás 3, 2, 1","Antes de cada turno")}
       ${vToggle("holdCard","👆","Carta oculta: mantener el dedo para verla","Para dejar el móvil en la mesa: el tiempo se ve en grande y solo quien describe ve la carta mientras la pulsa")}
       ${c.holdCard?`<div class="srow" style="padding:6px 4px"><span>👀 ${tr("Cada carta nueva se ve sola durante")}</span><div class="row">${[0,1,2,3,4,5].map(v=>`<button class="mchip ${(c.holdReveal??2)===v?"on":""}" onclick="setCfgR('holdReveal',${v})">${v} s</button>`).join("")}</div></div>`:""}
+      ${vToggle("guided","💡","Modo guiado","Explicaciones paso a paso para quien no conoce el juego.")}
+      ${vToggle("reviewBetween","👀","Repaso de cartas entre rondas","No es del original: antes de cada ronda se ven todas las cartas unos segundos.")}
+      ${c.reviewBetween?vStep("reviewSecs","⏲️","Tiempo de repaso","","s"):""}
     </div>
     <details class="adv"><summary>🔁 ${tr("Rondas")} (${c.rounds.filter(r=>r.enabled).length}): ${esc(c.rounds.filter(r=>r.enabled).map(r=>r.name).join(" · "))}</summary>
     <div class="rounds">${c.rounds.map((r,i)=>`
@@ -2198,30 +2224,18 @@ function vSetup(){
     <button class="btn small" style="margin-top:10px" onclick="addRound()">Añadir ronda</button>
     </details>
     <details class="adv"><summary>🎴 ${tr("Reparto y vetos")}${c.vetoOn?" · "+tr("con vetos"):""}</summary>${deal}</details>
-    <details class="adv"><summary>⚙️ ${tr("Ayudas durante la partida")}</summary>
-    <div class="opts">
-      ${vToggle("guided","💡","Modo guiado","Explicaciones paso a paso para quien no conoce el juego.")}
-      ${vToggle("reviewBetween","👀","Repaso de cartas entre rondas","No es del original: antes de cada ronda se ven todas las cartas unos segundos.")}
-      ${c.reviewBetween?vStep("reviewSecs","⏲️","Tiempo de repaso","","s"):""}
-    </div>
-    </details>`;
+`;
 
   const nR=c.rounds.filter(r=>r.enabled).length;
   const rulesStatus=`${c.turnSeconds} s · ${nR} ${nR===1?"ronda":"rondas"}${isOriginal()?"":" · modificadas"}`;
 
   return topbar()+`<div class="wrap">
-  <header class="hero"><div class="logo">${MASCOT}</div><h1>Time’s Up!</h1><p class="credit">Creado por Álex Cebrián Ponce</p><p class="ver"><span>Versión</span> ${APP_VERSION}</p><p>Configura la partida y jugad pasando el móvil, la tablet o el ordenador.</p><div class="hero-btns"><button class="btn small ghost" onclick="showRules()">📖 ¿Cómo se juega?</button>${S.locked?"":`<button class="btn small ghost" onclick="showRanking()">🏆 Ranking</button>`}</div></header>
-  <p class="grp">Quién juega</p>
+  <header class="hero hc"><h1 class="sr">Time’s Up!</h1><div class="logo">${MASCOT}</div><div class="hero-btns"><button class="btn small ghost" onclick="showRules()">📖 ¿Cómo se juega?</button>${S.locked?"":`<button class="btn small ghost" onclick="showRanking()">🏆 Ranking</button>`}</div><div class="meta"><p class="credit">Creado por Álex Cebrián Ponce</p><p class="ver"><span>Versión</span> ${APP_VERSION}</p></div></header>
   ${sec("players","👥 Jugadores y equipos",`${np} jugadores${S.drawn?`, ${S.teams.length} equipos`:""}`,players)}
   ${(()=>{ if(!(S.errors&&S.errors.length)) return ""; S.errors=validate(); return S.errors.length?`<div class="errors" id="errors" role="alert"><b>Falta arreglar esto:</b><ul>${S.errors.map(e=>`<li>${esc(e)}</li>`).join("")}</ul></div>`:""; })()}
-  <p class="grp">Cómo se juega</p>
   ${S.locked&&!S.locked.open?vLockedSummary():`${packOn()?sec("cats",`${VB()[0].icon} Cartas de ${esc(VB()[0].label)}`,`${VB()[0].items.length} cartas vuestras`,`<p class="sub">Se juega solo con las cartas de vuestro grupo. La dificultad no se aplica aquí.</p><div class="row"><button class="btn small primary" onclick="showWords()">📋 Ver las cartas</button><button class="btn small ghost" onclick="setPack('')">↩️ Volver a las cartas normales</button></div>`):sec("cats","🃏 Cartas y categorías",`${ncat} de ${VB().length}, ${difName().toLowerCase()}`,cats)}
   ${sec("rules","📜 Normas y rondas",rulesStatus,rules)}`}
-  ${S.locked?"":`<p class="grp">Otros modos</p>
-  <div class="tiles modes">
-    <button class="tile" onclick="teacherPanel()"><span class="ti">🎓</span><b>Partidas de clase</b><small>Para profes: cartas y normas fijas</small></button>
-    ${packOn()?`<button class="tile on" onclick="setPack('')"><span class="ti">↩️</span><b>${tr("Volver al juego normal")}</b><small>Dejar las cartas del grupo</small></button>`:`<button class="tile" onclick="friendsPanel()"><span class="ti">👯</span><b>Con amigos</b><small>Cartas hechas para vuestro grupo</small></button>`}
-  </div>`}
+  ${S.locked?"":`<div class="row modes-row"><button class="btn small ghost" onclick="teacherPanel()">🎓 Partidas de clase</button>${packOn()?`<button class="btn small ghost" onclick="setPack('')">↩️ ${tr("Volver al juego normal")}</button>`:`<button class="btn small ghost" onclick="friendsPanel()">👯 Con amigos</button>`}</div>`}
     </div>
   <div class="bottombar"><button class="btn primary big" onclick="prepareDeck()">Repartir cartas</button></div>`;
 }
