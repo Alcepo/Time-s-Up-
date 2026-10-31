@@ -825,6 +825,14 @@ details.adv.rnd > summary{font-weight:600}
 /* Más opciones de la mesa: los 3 botones en una fila, pequeños */
 .adv .opts3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
 .adv .opts3 .btn{min-height:38px;padding:4px 5px;font-size:.76rem;line-height:1.15}
+/* Equipos a mano (dentro de Más opciones): arriba animal, nombre y flechas; debajo, todos los jugadores en su fila */
+.adv .legend{margin-top:8px}
+.legend .lteam{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;column-gap:8px;row-gap:4px}
+.legend .lteam .info{display:contents}
+.legend .lteam .em{grid-column:1;grid-row:1}
+.legend .lteam .info > b{grid-column:2;grid-row:1}
+.legend .lteam .updown{grid-column:3;grid-row:1;flex-direction:row}
+.legend .lteam .order{grid-column:1/-1;grid-row:2}
 </style>
 </head>
 <body>
@@ -2202,13 +2210,13 @@ function vSetup(){
         <div class="stepper"><b style="font-size:1rem;font-family:var(--body)">Equipos</b><button class="icon-btn" aria-label="Quitar equipo" onclick="teamCount(-1)">−</button><b>${S.teams.length}</b><button class="icon-btn" aria-label="Añadir equipo" onclick="teamCount(1)">+</button></div><small class="hint teamhint" style="margin:0">${S.teamsManual?tr("Elegido a mano"):tr("Automático: por parejas")}</small>
       </div>
       <div class="row" style="margin-top:12px"><button class="btn small primary" onclick="shuffleTeams()">🎲 Sortear otra vez</button><button class="btn small" onclick="editPlayers()">✏️ Añadir o quitar jugadores</button></div>
-      <details class="adv"><summary>⚙️ ${tr("Más opciones de la mesa")}</summary><div class="row opts3" style="margin-top:6px"><button class="btn small ghost" onclick="shuffleTeamOrder()">🔀 Sortear el orden de equipos</button><button class="btn small ghost" onclick="shuffleWithin()">🔁 Sortear el orden dentro de cada equipo</button><button class="btn small ghost" onclick="clearPlayers()">🗑️ Vaciar la mesa</button></div></details>
+      <details class="adv"><summary>⚙️ ${tr("Más opciones de la mesa")}</summary><div class="row opts3" style="margin-top:6px"><button class="btn small ghost" onclick="shuffleTeamOrder()">🔀 Sortear el orden de equipos</button><button class="btn small ghost" onclick="shuffleWithin()">🔁 Sortear el orden dentro de cada equipo</button><button class="btn small ghost" onclick="clearPlayers()">🗑️ Vaciar la mesa</button></div>
       <div class="legend">${S.teams.map((t,i)=>`<div class="lteam">
         <button class="em" onclick="cycleAnimal(${i})" aria-label="Cambiar animal">${tEmoji(i)}</button>
         <div class="info"><b>${an(t.animal)}</b><div class="order">${t.players.length?t.players.map((p,j)=>`<span class="op"><i>${j+1}</i>${esc(p)}<button class="opx" aria-label="Quitar a ${esc(p)}" onclick="removeAt(${i},${j})">✕</button></span>${j+1<t.players.length?`<button class="swp" aria-label="Cambiar orden de ${esc(p)} y ${esc(t.players[j+1])}" onclick="swapWithin(${i},${j})">⇄</button>`:""}`).join(""):"<small>Sin jugadores</small>"}</div></div>
         <span class="updown">${i>0?`<button class="icon-btn" aria-label="Subir equipo" onclick="moveTeam(${i},-1)">↑</button>`:""}${i<S.teams.length-1?`<button class="icon-btn" aria-label="Bajar equipo" onclick="moveTeam(${i},1)">↓</button>`:""}</span>
       </div>`).join("")}</div>
-      <p class="hint">Toca el animal para cambiarlo. Con ⇄ cambiáis el orden dentro del equipo y con ✕ quitáis a alguien.</p>`}`;
+      <p class="hint">Toca el animal para cambiarlo. Con ⇄ cambiáis el orden dentro del equipo y con ✕ quitáis a alguien.</p></details>`}`;
 
   const deal=`
     <h3 class="mini-h" style="margin-top:6px">Reparto</h3>
