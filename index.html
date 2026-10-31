@@ -906,6 +906,22 @@ details.adv.rnd > summary{font-weight:600}
 .seg button.on{background:var(--accent);color:var(--accent-ink)}
 .chipx{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:transparent;color:inherit;border-radius:999px;padding:6px 12px;font-size:.88rem;font-weight:600;cursor:pointer;margin:2px 0 6px;opacity:.75}
 .chipx.on{opacity:1;border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+
+/* reparto: pasos 1·2·3 (marcar, elegir color, cambiar cartas) */
+.flow{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.fstep{border:1.5px solid var(--line);border-radius:16px;padding:10px 10px 4px;background:var(--surface)}
+.fh{display:flex;gap:10px;align-items:flex-start;margin-bottom:8px}
+.fh>i{flex:none;width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font:700 .88rem var(--display);font-style:normal;margin-top:1px}
+.fh b{display:block;font-family:var(--display);font-size:1.05rem;line-height:1.2}
+.fh small{display:block;color:var(--muted);font-size:.83rem;line-height:1.3;margin-top:2px}
+.tiles.t4{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.tiles.t4 .tile{min-height:68px;padding:8px 2px}
+.tiles.t4 .tile b{font-size:.78rem}
+.tiles.t4 .tile.nw b{white-space:nowrap}
+.tiles.t4 .tile .ti{font-size:1.35rem;white-space:nowrap}
+.fstep .tiles{margin-bottom:8px}
+.fstep .opts{margin-bottom:8px}
+.fstep .tile:disabled{opacity:.45}
 </style>
 </head>
 <body>
@@ -1122,6 +1138,11 @@ CA_DICT["Volver a los originales"]="Tornar als originals";
 CA_DICT["Cartas y reparto originales restaurados"]="Cartes i repartiment originals restaurats";
 CA_DICT["Modo con amigos"]="Mode amb amics";
 CA_DICT["Cambiar de grupo"]="Canviar de grup"; CA_DICT["Grupo"]="Grup"; CA_DICT["Normales"]="Normals"; CA_DICT["Salir"]="Sortir"; CA_DICT["Juego normal"]="Joc normal";
+CA_DICT["Opcional: solo sirve para tener una idea de lo que gusta."]="Opcional: només serveix per fer-se una idea del que agrada.";
+CA_DICT["Es el color con el que se juega toda la partida."]="És el color amb el qual es juga tota la partida.";
+CA_DICT["Cambio de cartas"]="Canvi de cartes";
+CA_DICT["Después de elegir el color."]="Després d’escollir el color.";
+CA_DICT["Primero activa los 👍 arriba"]="Primer activa els 👍 a dalt";
 function trCA(t){ const k=String(t).trim(); if(!k) return t; let r=CA_DICT[k];
   if(r===undefined){ for(const [re,o] of CA_PAT){ const m=k.match(re); if(m){ r=o.replace(/\$(\d+)/g,(_,i)=>m[+i]===undefined?"":m[+i]); break; } } }
   return r===undefined?t:String(t).replace(k,r); }
@@ -2512,14 +2533,21 @@ function vSetup(){
     <h3 class="mini-h" style="margin-top:6px">Reparto</h3>
     ${vTiles("deckMode",[{v:"original",i:"🎴",l:"Como el original",d:"Cada uno ve sus cartas, vota el color y descarta."},{v:"random",i:"🎲",l:"Totalmente al azar",d:"Nadie ve las cartas. Se mezclan las dos caras."}])}
     ${c.deckMode==="original"?`
-    <div class="opts" style="margin-top:10px">
-      <details class="adv"><summary>🎨 <span>Cómo se elige el color</span>: <b>${({end:"Al final, todos juntos",during:"Mientras mira cada uno",likes:"Según los 👍 marcados",random:"Al azar"})[c.voteWhen]||"Al final, todos juntos"}</b></summary>
-      ${vTiles("voteWhen",[{v:"end",i:"👀",l:"Al final, todos juntos",d:"Cuando todos han visto sus cartas"},{v:"during",i:"🤫",l:"Mientras mira cada uno",d:"En secreto, en su móvil"}].concat(c.markOn&&c.markKinds!=="down"?[{v:"likes",i:"👍",l:"Según los 👍 marcados",d:"Gana el color con más 👍, sin votar"}]:[]).concat([{v:"random",i:"🎲",l:"Al azar",d:"Sin votar: lo decide el azar"}]))}
-      </details>
-      <div class="markbar"><b>👍 <span>Marcar al mirar</span></b><div class="seg" role="group">${[["off","No","Sin marcar"],["both","👍👎","Los dos"],["up","👍","Solo 👍"],["down","👎","Solo 👎"]].map(([v,l,t])=>{ const on=(c.markOn?(c.markKinds||"both"):"off")===v; return `<button class="${on?"on":""}" aria-pressed="${on}" aria-label="${t}" title="${t}" onclick="setMarkMode('${v}')">${l}</button>`; }).join("")}</div></div>
-      ${c.markOn&&c.markKinds!=="up"?`<button class="chipx ${c.likesAuto!==false?"on":""}" role="switch" aria-checked="${c.likesAuto!==false}" onclick="setCfgR('likesAuto',${c.likesAuto===false})">🔄 <span>Cambiar solas las cartas con 👎</span></button>`:""}
-      ${c.voteColor&&c.voteWhen==="likes"&&c.likesAuto!==false&&c.markKinds!=="up"?"":vStep("discardRounds","🔄","Cambios de cartas por jugador","En el original, 1: las nuevas son definitivas.")}
-    </div>
+    ${(()=>{
+      const mk=c.markOn?(c.markKinds||"both"):"off", canLike=!!c.markOn&&c.markKinds!=="down", canDis=!!c.markOn&&c.markKinds!=="up", auto=c.likesAuto!==false;
+      const markTiles=[["off","🚫","Sin marcar"],["both","👍👎","Los dos"],["up","👍","Solo 👍"],["down","👎","Solo 👎"]].map(([v,i,l])=>`<button class="tile ${mk===v?"on":""}${v==="up"||v==="down"?" nw":""}" aria-pressed="${mk===v}" onclick="setMarkMode('${v}')"><span class="ti">${i}</span><b>${l}</b></button>`).join("");
+      const colorOpts=[{v:"end",i:"👀",l:"Al final, todos juntos",d:"Cuando todos han visto sus cartas"},{v:"during",i:"🤫",l:"Mientras mira cada uno",d:"En secreto, en su móvil"},{v:"likes",i:"👍",l:"Según los 👍 marcados",d:canLike?"Gana el color con más 👍, sin votar":"Primero activa los 👍 arriba",off:!canLike},{v:"random",i:"🎲",l:"Al azar",d:"Sin votar: lo decide el azar"}];
+      const colorTiles=colorOpts.map(o=>{ const on=!o.off&&String(c.voteWhen||"end")===o.v; return `<button class="tile ${on?"on":""}" aria-pressed="${on}" ${o.off?"disabled":""} onclick='setCfgR("voteWhen","${o.v}")'><span class="ti">${o.i}</span><b>${o.l}</b><small>${o.d}</small></button>`; }).join("");
+      const swap=canDis?`<button class="opt ${auto?"on":""}" role="switch" aria-checked="${auto}" onclick="setCfgR('likesAuto',${!auto})"><span class="oi">🔄</span><span class="ot"><b>Cambiar solas las cartas con 👎</b><small>Se cambian las que tengan 👎 en el color elegido. Si lo desactivas, solo se marca.</small></span><span class="sw2"></span></button>`:"";
+      const manual=c.voteWhen==="likes"&&auto&&canDis?"":vStep("discardRounds","🔄","Cambios de cartas por jugador","En el original, 1: las nuevas son definitivas.");
+      return `<div class="flow">
+        <section class="fstep"><div class="fh"><i>1</i><div><b>👍 <span>Marcar al mirar</span></b><small>Opcional: solo sirve para tener una idea de lo que gusta.</small></div></div>
+          <div class="tiles t4" role="group">${markTiles}</div></section>
+        <section class="fstep"><div class="fh"><i>2</i><div><b>🎨 <span>Cómo se elige el color</span></b><small>Es el color con el que se juega toda la partida.</small></div></div>
+          <div class="tiles">${colorTiles}</div></section>
+        <section class="fstep"><div class="fh"><i>3</i><div><b>🔄 <span>Cambio de cartas</span></b><small>Después de elegir el color.</small></div></div>
+          <div class="opts">${swap}${manual}</div></section>
+      </div>`; })()}
     <details class="adv"><summary>⚙️ ${tr("Si el reparto no es exacto")}</summary>
     ${vTiles("handSplit",[{v:"ask",i:"❓",l:"Preguntar",d:"Avisa antes de repartir"},{v:"up",i:"⬆️",l:"Una más",d:"Todos con las mismas, mazo algo mayor"},{v:"down",i:"⬇️",l:"Una menos",d:"Todos con las mismas, mazo algo menor"},{v:"keep",i:"➡️",l:"Dejarlo así",d:"Unos ven una carta más"}])}
     </details>`:""}
