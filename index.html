@@ -799,6 +799,32 @@ details.adv.rnd > summary{font-weight:600}
 .errpop b{color:var(--no)}
 .errpop ul{margin:4px 0 0;padding-left:20px;line-height:1.4}
 @keyframes errin{from{opacity:0;transform:translate(-50%,-10px)}to{opacity:1;transform:translate(-50%,0)}}
+
+/* ===== Ajustes de maqueta ===== */
+/* Lista de equipos más compacta: animal, nombre y jugadores en poco espacio */
+.legend{gap:6px}
+.legend .lteam{gap:8px;padding:6px 8px}
+.legend .lteam .em{font-size:1.5rem;width:42px;height:42px;border-radius:12px;flex:none}
+.legend .lteam .info{min-width:0;line-height:1.2}
+.legend .lteam .info b{font-size:.95rem}
+.legend .order{gap:3px;margin-top:2px}
+.legend .op{gap:3px;padding:2px 3px 2px 3px;font-size:.8rem;max-width:100%}
+.legend .op i{width:18px;height:18px;font-size:.66rem;flex:none}
+.legend .op .opx{padding:0 2px;min-width:20px;min-height:20px;font-size:.75rem}
+.legend .swp{min-width:26px;height:26px;padding:0;border-radius:8px;font-size:.8rem}
+.legend .updown{flex:none;gap:3px;justify-content:center}
+.legend .updown .icon-btn{min-width:32px;height:30px;padding:0 4px;border-radius:8px}
+/* Cartas propias: las 3 opciones siempre en una fila */
+.chips.own3{flex-wrap:nowrap;gap:6px}
+.chips.own3 .mchip{flex:1 1 0;min-width:0;padding:6px 4px;min-height:44px;font-size:.8rem;line-height:1.15;text-align:center;border-radius:14px;display:flex;align-items:center;justify-content:center}
+/* Categorías (también en partidas de clase): el texto nunca se sale del recuadro */
+.cat>span:last-child{min-width:0;overflow-wrap:anywhere;word-break:normal;hyphens:auto;-webkit-hyphens:auto}
+.modal .cat{font-size:.92rem}
+.tile b,.tile small{overflow-wrap:anywhere}
+
+/* Más opciones de la mesa: los 3 botones en una fila, pequeños */
+.adv .opts3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.adv .opts3 .btn{min-height:38px;padding:4px 5px;font-size:.76rem;line-height:1.15}
 </style>
 </head>
 <body>
@@ -1093,7 +1119,12 @@ const SEASON_MUSIC=(()=>{
     amb:{bpm:60,wave:"sine",vol:.036,bvol:.045,len:2,
       notes:mel("D5 . . . A4 . . . F5 . . . E5 . D5 . Bb4 . . . A4 . . . G4 . A4 . D4 . . ."),bass:bass("D3 Bb2 G2 A2",8)},
     turn:{bpm:92,wave:"triangle",vol:.045,
-      notes:mel("D5 . F5 A5 . F5 D5 . Bb4 . D5 F5 . D5 Bb4 . G4 . Bb4 D5 . Bb4 G4 . A4 . C#5 E5 . A5 . ."),bass:bass("D3 Bb2 G2 A2",8,true)}}
+      notes:mel("D5 . F5 A5 . F5 D5 . Bb4 . D5 F5 . D5 Bb4 . G4 . Bb4 D5 . Bb4 G4 . A4 . C#5 E5 . A5 . ."),bass:bass("D3 Bb2 G2 A2",8,true)}},
+  cumpleanos:{
+    amb:{bpm:100,wave:"triangle",vol:.03,bvol:.048,len:1.2,
+      notes:mel("C5 . E5 . G5 . E5 . F5 . A5 . G5 . E5 . D5 . F5 . A5 . F5 . G5 . E5 . C5 . . ."),bass:bass("C3 F2 G2 C3",8)},
+    turn:{bpm:132,wave:"triangle",vol:.05,
+      notes:mel("C5 E5 G5 C6 . G5 E5 G5 F5 A5 C6 A5 . F5 A5 C6 D5 F5 A5 D6 . A5 F5 A5 G5 . E5 . C5 . . ."),bass:bass("C3 F2 G2 C3",8,true)}}
   };
 })();
 function seasonMusic(){ const t=seasonNow; return t?(t.music||SEASON_MUSIC[t.id]||null):null; }
@@ -2171,11 +2202,11 @@ function vSetup(){
         <div class="stepper"><b style="font-size:1rem;font-family:var(--body)">Equipos</b><button class="icon-btn" aria-label="Quitar equipo" onclick="teamCount(-1)">−</button><b>${S.teams.length}</b><button class="icon-btn" aria-label="Añadir equipo" onclick="teamCount(1)">+</button></div><small class="hint teamhint" style="margin:0">${S.teamsManual?tr("Elegido a mano"):tr("Automático: por parejas")}</small>
       </div>
       <div class="row" style="margin-top:12px"><button class="btn small primary" onclick="shuffleTeams()">🎲 Sortear otra vez</button><button class="btn small" onclick="editPlayers()">✏️ Añadir o quitar jugadores</button></div>
-      <details class="adv"><summary>⚙️ ${tr("Más opciones de la mesa")}</summary><div class="row" style="margin-top:8px"><button class="btn small ghost" onclick="shuffleTeamOrder()">🔀 Sortear el orden de equipos</button><button class="btn small ghost" onclick="shuffleWithin()">🔁 Sortear el orden dentro de cada equipo</button><button class="btn small ghost" onclick="clearPlayers()">🗑️ Vaciar la mesa</button></div></details>
+      <details class="adv"><summary>⚙️ ${tr("Más opciones de la mesa")}</summary><div class="row opts3" style="margin-top:6px"><button class="btn small ghost" onclick="shuffleTeamOrder()">🔀 Sortear el orden de equipos</button><button class="btn small ghost" onclick="shuffleWithin()">🔁 Sortear el orden dentro de cada equipo</button><button class="btn small ghost" onclick="clearPlayers()">🗑️ Vaciar la mesa</button></div></details>
       <div class="legend">${S.teams.map((t,i)=>`<div class="lteam">
         <button class="em" onclick="cycleAnimal(${i})" aria-label="Cambiar animal">${tEmoji(i)}</button>
         <div class="info"><b>${an(t.animal)}</b><div class="order">${t.players.length?t.players.map((p,j)=>`<span class="op"><i>${j+1}</i>${esc(p)}<button class="opx" aria-label="Quitar a ${esc(p)}" onclick="removeAt(${i},${j})">✕</button></span>${j+1<t.players.length?`<button class="swp" aria-label="Cambiar orden de ${esc(p)} y ${esc(t.players[j+1])}" onclick="swapWithin(${i},${j})">⇄</button>`:""}`).join(""):"<small>Sin jugadores</small>"}</div></div>
-        <span class="updown"><button class="icon-btn" aria-label="Subir equipo" onclick="moveTeam(${i},-1)">↑</button><button class="icon-btn" aria-label="Bajar equipo" onclick="moveTeam(${i},1)">↓</button></span>
+        <span class="updown">${i>0?`<button class="icon-btn" aria-label="Subir equipo" onclick="moveTeam(${i},-1)">↑</button>`:""}${i<S.teams.length-1?`<button class="icon-btn" aria-label="Bajar equipo" onclick="moveTeam(${i},1)">↓</button>`:""}</span>
       </div>`).join("")}</div>
       <p class="hint">Toca el animal para cambiarlo. Con ⇄ cambiáis el orden dentro del equipo y con ✕ quitáis a alguien.</p>`}`;
 
@@ -2223,7 +2254,7 @@ function vSetup(){
     ${vTiles("dealMode",[{v:"mix",i:"🌀",l:"Mezcla al azar"},{v:"equal",i:"⚖️",l:"Equilibrado por categorías",d:"El mismo número de cada una"}])}
     ${deal}
     <h3 class="mini-h">Cartas propias</h3>
-    ${(()=>{ const m=ownMode(); return `<div class="chips">${[["none","Ninguna"],["list","✍️ Una lista"],["secret","🤫 Cada uno en secreto"]].map(([k,l])=>`<button class="mchip ${m===k?"on":""}" aria-pressed="${m===k}" onclick="setOwn('${k}')">${tr(l)}</button>`).join("")}</div>
+    ${(()=>{ const m=ownMode(); return `<div class="chips own3">${[["none","Ninguna"],["list","✍️ Una lista"],["secret","🤫 Cada uno en secreto"]].map(([k,l])=>`<button class="mchip ${m===k?"on":""}" aria-pressed="${m===k}" onclick="setOwn('${k}')">${tr(l)}</button>`).join("")}</div>
       ${m==="list"?`<label class="field" style="margin-top:8px"><small>Una por línea. Entran siempre en el mazo.</small>
         <textarea oninput="setCfg('custom',this.value)" placeholder="El profe de mates&#10;La abuela de Pau">${esc(c.custom)}</textarea></label>`:""}
       ${m==="secret"?`<div class="opts" style="margin-top:8px">${vStep("perPlayer","🤫","Cartas secretas por jugador","Cada uno escribe las suyas sin que lo vean los demás.")}</div>${(c.custom||"").trim()?`<p class="hint">Siguen entrando vuestras cartas fijas de la lista.</p>`:""}`:""}`; })()}`;
@@ -2736,7 +2767,12 @@ const SEASONS=(()=>{
   T({id:"todossantos",name:"Todos los Santos",name_ca:"Tots Sants",emoji:"💀",days:["11-01"],
     light:{"--bg":"#f3f0f7","--surface-2":"#e9e4f1","--line":"#cfc7de","--accent":"#5b4a7a","--accent-ink":"#ffffff"},
     dark:{"--bg":"#0f0f17","--surface":"#171724","--surface-2":"#1e1e30","--line":"#34344f","--accent":"#cdbdff","--accent-ink":"#1a1230"},
-    bg:{light:"linear-gradient(#f3f0f7,#ddd6ea)",dark:"linear-gradient(#0f0f17,#181826)"},themeColor:"#5b4a7a",decor:{emojis:["💀","🕯️","🌼"],count:12,mode:"rise"}})
+    bg:{light:"linear-gradient(#f3f0f7,#ddd6ea)",dark:"linear-gradient(#0f0f17,#181826)"},themeColor:"#5b4a7a",decor:{emojis:["💀","🕯️","🌼"],count:12,mode:"rise"}}),
+  /* Cumpleaños: sin days/ranges/weekdays/fn, así que NUNCA se activa sola; solo si se elige a mano en ☰ → Sonido y pantalla → Temática */
+  T({id:"cumpleanos",name:"Cumpleaños",name_ca:"Aniversari",emoji:"🎂",
+    light:{"--bg":"#f0fcfc","--surface-2":"#def6f7","--line":"#b5e3e6","--accent":"#00838f","--accent-ink":"#ffffff"},
+    dark:{"--bg":"#071a1d","--surface":"#0e2a2f","--surface-2":"#133339","--line":"#23525a","--accent":"#6ee7f2","--accent-ink":"#032a2e"},
+    bg:{light:"linear-gradient(#f0fcfc,#c9f1f3)",dark:"linear-gradient(#071a1d,#0c2b30)"},themeColor:"#00838f",decor:{emojis:["🎂","🎈","🎉","🎁"],count:12,mode:"rise"}})
   ];
 })();
 let seasonSig="", seasonMeta0=null;
